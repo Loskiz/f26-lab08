@@ -9,6 +9,9 @@ runtime dependencies on either side. The HTTP server is
 `com.sun.net.httpserver`, the event log is JSON Lines written by hand, and the
 Python package is standard library only.
 
+**Lab 8 tools:** Claude Code (desktop app, and CLI 2.1.306 for the guardrail
+demo and the refuter session) running Claude Opus 5.5 (`claude-opus-5-5`).
+
 ## Modules
 
 | Module | What it holds |

@@ -337,7 +337,9 @@ happens instead. It also promotes u-2 into 15:00-16:00, and that probe passed. T
 modification does exactly what a cancellation does. The stranded waiter comes
 from existing cancellation behavior: the pass only walks the cancelled
 booking's room. That is outside T1. The run is in
-`evidence/milestone3-refuter-run.txt`.
+`evidence/milestone3-refuter-run.txt`. Every probe, the stranded-waiter setup
+step by step, and my check are in
+[`evidence/milestone3-refuter.md`](evidence/milestone3-refuter.md).
 
 Claims 2 (a nudge promotes the waiter) and 3 (zero attendees throws instead of
 being rejected) I left alone. Claim 2 has the same cause as claim 1. For claim
