@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "deny": [
+      "Edit(/cli/**)",
+      "Edit(/billing/**)",
+      "Edit(/accounts/**)",
+      "Edit(/analytics/campusreserve_analytics/revenue.py)",
+      "Edit(/AGENTS.md)",
+      "Edit(/ARCHITECTURE.md)",
+      "Edit(/CLAUDE.md)",
+      "Edit(/CHANGE-REQUEST.md)",
+      "Edit(/.claude/**)",
+      "Edit(/guardrails/**)",
+      "Bash(git push:*)",
+      "Bash(rm *)",
+      "Bash(sudo *)"
+    ]
+  }
+}
