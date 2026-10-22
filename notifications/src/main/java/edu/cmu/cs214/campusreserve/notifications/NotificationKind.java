@@ -2,6 +2,7 @@ package edu.cmu.cs214.campusreserve.notifications;
 
 import edu.cmu.cs214.campusreserve.core.events.BookingCancelledEvent;
 import edu.cmu.cs214.campusreserve.core.events.BookingCreatedEvent;
+import edu.cmu.cs214.campusreserve.core.events.BookingModifiedEvent;
 import edu.cmu.cs214.campusreserve.core.events.DomainEvent;
 import edu.cmu.cs214.campusreserve.core.events.WaitlistPromotedEvent;
 import java.util.Objects;
@@ -55,6 +56,8 @@ public enum NotificationKind {
         return switch (event) {
             case BookingCreatedEvent ignored -> BOOKING_CONFIRMED;
             case BookingCancelledEvent ignored -> BOOKING_CANCELLED;
+            case BookingModifiedEvent ignored ->
+                throw new UnsupportedOperationException("No message for booking-modified yet");
             case WaitlistPromotedEvent ignored -> WAITLIST_PROMOTED;
         };
     }

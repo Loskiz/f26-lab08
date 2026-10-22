@@ -11,7 +11,7 @@ import java.time.Instant;
  * reads the event log, so they are declared once here and nowhere else.
  */
 public sealed interface DomainEvent
-    permits BookingCreatedEvent, BookingCancelledEvent, WaitlistPromotedEvent {
+    permits BookingCreatedEvent, BookingCancelledEvent, BookingModifiedEvent, WaitlistPromotedEvent {
 
     /** The wire name of this event, for example {@code booking-created}. */
     String type();

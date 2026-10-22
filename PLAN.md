@@ -264,19 +264,83 @@ a module I put out of scope (a guardrail deny, or a file outside T1's scope in
 `git diff --stat`), I stop the agent, revert those changes, and write that piece
 myself.
 
-**The evidence.** Name the task from Milestone 1. Paste the result line of its
-gate command (run it without `-q` so the line is in the output) and the result
-line of one `mvn -B clean test` run after the task was finished. The module
-gate cannot see a cross-module compile break on a warm tree. A cold build can,
-and so can CI.
+**The evidence.** Task: T1, modifying a booking in the domain.
 
-**The diff.** The files the agent changed, and how each one maps to that task's
-declared scope (plain `git diff` leaves out new files, but
-`git add -N . && git diff --stat` includes them). Note anything it touched that
-you did not expect, including any shipped test. Then quote the one line you
-read hardest and say what you were checking for.
+- `mvn -pl core-domain -am test`, core-domain block:
+  `[INFO] Tests run: 196, Failures: 0, Errors: 0, Skipped: 0` (was 167).
+- `mvn -B clean test`: `[INFO] BUILD SUCCESS`. All 7 modules pass. The other
+  module counts are unchanged, and `pytest` still shows 137 passed.
+- The takeover point didn't fire: there was no guardrail deny and no file
+  outside T1's scope.
+- I checked my green-but-wrong case by commenting out `bookings.save(modified)`.
+  8 of the new tests went red, and then I put the line back.
 
-**The refuter.** What you gave it and what you asked it to do (paste the
-brief). Then the one finding you settled, and how (the new failing test with
-its red run, or the evidence that dismissed it). If nothing it reported held
-up, say how you checked its strongest claim.
+**The diff.** `git add -N . && git diff --stat` shows 9 files, all in T1's scope:
+
+- `core-domain/.../domain/Booking.java`: adds a `history` field. The old
+  7-argument constructor is kept so `cli` and `billing` still compile.
+- `core-domain/.../domain/BookingChange.java` (new): one history entry, holding
+  the previous interval, the previous attendee count and the time of the change.
+- `core-domain/.../domain/ModificationResult.java` (new): the result is
+  Modified, Unchanged or Rejected.
+- `core-domain/.../events/BookingModifiedEvent.java` (new), and
+  `DomainEvent.java` adds it to `permits`.
+- `core-domain/.../service/BookingService.java`: `modifyBooking`, plus an
+  `othersThan` helper.
+- `core-domain/.../service/BookingServiceModifyTest.java` (new): 29 tests.
+- `notifications/.../NotificationKind.java` and `NotificationService.java`: a
+  stub `BookingModifiedEvent` arm that throws. `NotificationService` catches it
+  and records the event as skipped. This was planned, since the sealed switch
+  forces it, and T3 replaces it.
+
+There was nothing unexpected. No shipped test was touched. Every waitlist
+`save`/`remove` call is still in `BookingService`, and the diff adds no new
+start/end comparison.
+
+The line I read hardest:
+
+```java
+if (conflictChecker.hasConflict(othersThan(booking, bookings.findActiveByRoom(booking.roomId())),
+```
+
+I was checking that "a booking doesn't collide with itself" is handled by
+leaving the booking out of the list. The overlap test itself is still
+`ConflictChecker`, not a second start/end comparison (rule 3).
+
+**The refuter.** I ran it in a fresh Claude Code session. The brief:
+
+```
+You are a refuter. Your job is to break a change, not to fix it.
+
+Inputs. Use ONLY these:
+1. CHANGE-REQUEST.md (the spec)
+2. The task's diff: run `git add -N . && git diff`
+3. The task's scope, in one line: "T1: BookingService.modifyBooking in core-domain enforces CHANGE-REQUEST clauses 1-4, records history on the Booking, publishes a booking-modified event, and records nothing for a no-op."
+
+Do not read PLAN.md, AGENTS.md or ARCHITECTURE.md. You may read other source files only to understand code the diff calls.
+
+Task: find inputs or call sequences where modifyBooking behaves differently from what the change request says. [...list of places to start...]
+For each claim: the call sequence, the expected result quoting the CHANGE-REQUEST line it comes from, and the actual result.
+Probe tests go in a NEW file, RefuterProbeTest.java. Never edit an existing file. Rank claims strongest first.
+```
+
+It ran 7 probes and 3 failed. I settled the strongest one, claim 1: with a
+"stranded" waiter left on r-1 for 15:00-16:00, a modification that only
+lengthens a booking still promotes that waiter. The refuter quotes clause 4:
+"Running the pass and promoting nobody is the right outcome there."
+
+**Dismissed.** Clause 4 also says "The promotion pass runs when a successful
+modification changed the interval", and that it is "the same first in, first
+out waitlist promotion that a cancellation triggers today". So I added one probe
+with the same setup, where a cancellation of an unrelated 10:00 r-1 booking
+happens instead. It also promotes u-2 into 15:00-16:00, and that probe passed. The
+modification does exactly what a cancellation does. The stranded waiter comes
+from existing cancellation behavior: the pass only walks the cancelled
+booking's room. That is outside T1. The run is in
+`evidence/milestone3-refuter-run.txt`.
+
+Claims 2 (a nudge promotes the waiter) and 3 (zero attendees throws instead of
+being rejected) I left alone. Claim 2 has the same cause as claim 1. For claim
+3, `requestBooking` throws the same way, and nothing is written before the
+throw. I deleted the probe file afterwards, and the core-domain gate is green
+again.
