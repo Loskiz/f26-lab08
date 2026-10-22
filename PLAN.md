@@ -259,10 +259,10 @@ Run exactly ONE task from your plan with the agent, under the guardrail, through
 its gate. Any task whose dependencies are done qualifies, including the
 smallest one.
 
-**The takeover point.** Write this before you start the run. A concrete,
-conditional statement of when you would stop the agent and write the code
-yourself. "If something looks wrong" does not count. Name the trigger and name
-what you would do.
+**The takeover point.** If getting T1's tests to pass needs harness changes in
+a module I put out of scope (a guardrail deny, or a file outside T1's scope in
+`git diff --stat`), I stop the agent, revert those changes, and write that piece
+myself.
 
 **The evidence.** Name the task from Milestone 1. Paste the result line of its
 gate command (run it without `-q` so the line is in the output) and the result
